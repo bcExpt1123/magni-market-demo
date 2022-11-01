@@ -22,12 +22,7 @@ contract RoyaltyManager is ERC165, IRoyaltyManager {
     /**
      * @dev See {IRoyaltyManager-hasRoyalty}
      */
-    function hasRoyalty(address collectionAddress)
-        public
-        view
-        override
-        returns (bool)
-    {
+    function hasRoyalty(address collectionAddress) public view override returns (bool) {
         Royalty memory royalty = collectionToRoyalty[collectionAddress];
         return royalty.recipients.length > 0;
     }
@@ -43,13 +38,8 @@ contract RoyaltyManager is ERC165, IRoyaltyManager {
     {
         // return (_recipients, _amounts);
         Royalty memory royalty = collectionToRoyalty[collectionAddress];
-        require(
-            hasRoyalty(collectionAddress),
-            "This collection has not any royalty"
-        );
-        uint256[] memory royaltyValues = new uint256[](
-            royalty.recipients.length
-        );
+        require(hasRoyalty(collectionAddress), "This collection has not any royalty");
+        uint256[] memory royaltyValues = new uint256[](royalty.recipients.length);
 
         for (uint256 i = 0; i < royalty.recipients.length; i++) {
             royaltyValues[i] = (value * royalty.feePercents[i]) / 100;
@@ -68,15 +58,9 @@ contract RoyaltyManager is ERC165, IRoyaltyManager {
         for (uint256 i = 0; i < recipients.length; i++) {
             require(feePercents[i] <= 15, "Fees can not be larger than 15%");
             for (uint256 j = i + 1; j < recipients.length; j++) {
-                require(
-                    recipients[i] != recipients[j],
-                    "Recipients can not be duplicated"
-                );
+                require(recipients[i] != recipients[j], "Recipients can not be duplicated");
             }
         }
-        collectionToRoyalty[collectionAddress] = Royalty(
-            recipients,
-            feePercents
-        );
+        collectionToRoyalty[collectionAddress] = Royalty(recipients, feePercents);
     }
 }
