@@ -19,9 +19,6 @@ handler.post(async function handlePost({ body, files }, response) {
   try {
     const fileUrl = await uploadFileToIPFS(files.file[0])
     const metadata = {
-      name: body.name[0],
-      symbol: body.symbol[0],
-      shorturl: body.shorturl[0],
       description: body.description[0],
       image: fileUrl
     }
@@ -47,7 +44,7 @@ async function uploadFileToIPFS(data) {
         pinata_secret_api_key: process.env.PINATA_SECRET_KEY
       }
     })
-    const url = `https://ipfs.io/ipfs/${responseData.IpfsHash}?filename=${data.originalFilename}`
+    const url = `https://ipfs.io/ipfs/${responseData.IpfsHash}`
     console.log('uploadFileToIPFS ', url)
     return url
   } catch (error) {
@@ -62,7 +59,7 @@ async function uploadJsonToIPFS(json, fileName) {
         pinata_secret_api_key: process.env.PINATA_SECRET_KEY
       }
     })
-    const url = `https://ipfs.io/ipfs/${responseData.IpfsHash}?filename=${fileName}`
+    const url = `https://ipfs.io/ipfs/${responseData.IpfsHash}`
     console.log('uploadJsonToIPFS ', url)
     return url
   } catch (error) {

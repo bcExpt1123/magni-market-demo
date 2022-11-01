@@ -7,7 +7,7 @@ import { mapCollections, fetchMyCollectionIds } from '../src/utils/collection'
 import UnsupportedChain from '../src/components/molecules/UnsupportedChain'
 import ConnectWalletMessage from '../src/components/molecules/ConnectWalletMessage'
 
-export default function CreatorDashboard() {
+export default function CreatorCollection() {
   const [collections, setCollections] = useState([])
   const { account, marketplaceContract, collectionContract, nftContract, isReady, hasWeb3, network } = useContext(Web3Context)
   const [isLoading, setIsLoading] = useState(true)
@@ -25,10 +25,8 @@ export default function CreatorDashboard() {
     if (!isReady || !hasWeb3) return <></>
     const myCollectionIds = await fetchMyCollectionIds(collectionContract)
     const mapMyCollections = await Promise.all(myCollectionIds.map(
-      mapCollections(collectionContract, account)
+      mapCollections(collectionContract)
     ))
-    console.log('collectionContract', collectionContract)
-    console.log('myCollectionIds', myCollectionIds)
     console.log('mapMyCollections', mapMyCollections)
     setCollections(mapMyCollections)
     setIsLoading(false)
