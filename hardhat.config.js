@@ -27,7 +27,10 @@ module.exports = {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_ID}`,
       chainId: 1337,
       accounts: [process.env.ACCOUNT_PRIVATE_KEY, process.env.ACCOUNT2_PRIVATE_KEY]
-    }
+    },
+    hardhat: {
+      allowUnlimitedContractSize: true,
+    },
   },
   etherscan: {
     apiKey: {

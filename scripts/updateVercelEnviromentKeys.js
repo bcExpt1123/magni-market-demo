@@ -59,7 +59,7 @@ async function triggerDeployment () {
 
 async function main () {
   const networkName = hre.network.name.toUpperCase()
-  await updateVercelEnviromentVariableByNames(`MARKETPLACE_CONTRACT_ADDRESS_${networkName}`, `NFT_CONTRACT_ADDRESS_${networkName}`)
+  await updateVercelEnviromentVariableByNames(`MARKETPLACE_${networkName}`, `NFT_${networkName}`)
   await triggerDeployment()
 }
 
