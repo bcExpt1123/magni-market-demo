@@ -33,8 +33,8 @@ export default function CollectionCardCreation({ addCollectionToList }) {
   const { collectionContract } = useContext(Web3Context)
   const [isLoading, setIsLoading] = useState(false)
 
-  async function createCollection(name, symbol, metadataUrl) {
-    const transaction = await collectionContract.createCollection(0, name, symbol, metadataUrl)
+  async function createCollection(name, symbol, shorturl, metadataUrl) {
+    const transaction = await collectionContract.createCollection(0, name, symbol, shorturl, metadataUrl)
     const tx = await transaction.wait()
     const event = tx.events[0]
     const collectionId = event.args[0]
@@ -71,7 +71,7 @@ export default function CollectionCardCreation({ addCollectionToList }) {
       setIsLoading(true)
       const formData = createCollectionFormDataFile(name, symbol, shorturl, description, file)
       const metadataUrl = await uploadFileToIPFS(formData)
-      const collectionId = await createCollection(name, symbol, metadataUrl)
+      const collectionId = await createCollection(name, symbol, shorturl, metadataUrl)
       addCollectionToList(collectionId)
       setFileUrl(defaultFileUrl)
       reset()

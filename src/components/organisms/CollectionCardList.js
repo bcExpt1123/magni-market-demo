@@ -29,15 +29,11 @@ export default function CollectionCardList({ collections, setCollections, withCr
   const { account, collectionContract } = useContext(Web3Context)
 
   async function addCollectionToList(collectionId) {
-    console.log('new collectionId', collectionId)
-    const collection = await mapCollections(collectionContract, account)(collectionId)
-    console.log('new collection', collection)
+    const collection = await mapCollections(collectionContract)(collectionId)
     setCollections(prevCollections => [collection, ...prevCollections])
   }
 
   function Collection({ collection, index }) {
-    console.log('collection', collection)
-    console.log('index', index)
     if (!collection.creator) {
       return <CollectionCardCreation addCollectionToList={addCollectionToList} />
     }

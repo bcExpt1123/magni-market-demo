@@ -1,9 +1,9 @@
 import { createContext, useEffect, useState } from 'react'
 import Web3Modal from 'web3modal'
 import { ethers } from 'ethers'
-import NFT from '../../../artifacts/contracts/NFT.sol/NFT.json'
-import Market from '../../../artifacts/contracts/Marketplace.sol/Marketplace.json'
-import Collection from '../../../artifacts/contracts/CollectionManager.sol/CollectionManager.json'
+import MockERC721 from '../../../artifacts/contracts/mock/MockERC721.sol/MockERC721.json'
+import Market from '../../../artifacts/contracts/mock/Marketplace.sol/Marketplace.json'
+import Collection from '../../../artifacts/contracts/mock/CollectionManager.sol/CollectionManager.json'
 import axios from 'axios'
 
 const contextDefaultValues = {
@@ -35,22 +35,33 @@ export default function Web3Provider({ children }) {
   const [balance, setBalance] = useState(contextDefaultValues.balance)
   const [marketplaceContract, setMarketplaceContract] = useState(contextDefaultValues.marketplaceContract)
   const [collectionContract, setCollectionContract] = useState(contextDefaultValues.collectionContract)
-  const [nftContract, setNFTContract] = useState(contextDefaultValues.nftContract)
+  const [nftContract, setNftContract] = useState(contextDefaultValues.nftContract)
   const [isReady, setIsReady] = useState(contextDefaultValues.isReady)
+  const [nftAddress, setNftAddress] = useState('')
 
   useEffect(() => {
     initializeWeb3()
   }, [])
 
+  useEffect(async () => {
+    if (nftAddress) {
+      console.log("changed nftAddress")
+      initializeWeb3()
+    }
+  }, [nftAddress])
+
   async function initializeWeb3WithoutSigner() {
+    console.log('initializeWeb3WithoutSigner')
     const alchemyProvider = new ethers.providers.AlchemyProvider(80001)
     setHasWeb3(false)
     await getAndSetWeb3ContextWithoutSigner(alchemyProvider)
   }
 
   async function initializeWeb3() {
+    console.log('initializeWeb3')
     try {
       if (!window.ethereum) {
+        console.log('!window.ethereum')
         await initializeWeb3WithoutSigner()
         return
       }
@@ -60,7 +71,6 @@ export default function Web3Provider({ children }) {
       const connection = await web3Modal.connect()
       setHasWeb3(true)
       const provider = new ethers.providers.Web3Provider(connection, 'any')
-      console.log('provider', provider)
       await getAndSetWeb3ContextWithSigner(provider)
 
       function onAccountsChanged(accounts) {
@@ -75,6 +85,7 @@ export default function Web3Provider({ children }) {
       connection.on('accountsChanged', onAccountsChanged)
       connection.on('chainChanged', initializeWeb3)
     } catch (error) {
+      console.log('!window.ethereum error')
       initializeWeb3WithoutSigner()
       console.log(error)
     }
@@ -106,11 +117,11 @@ export default function Web3Provider({ children }) {
 
   async function getAndSetNetwork(provider) {
     let { name: network } = await provider.getNetwork()
+    console.log('network', network)
     const { chainId: chainId } = await provider.getNetwork()
     if (chainId == 43113) network = 'fuji'
-
     console.log('network', network)
-    console.log('chainId', chainId)
+
     const networkName = networkNames[network]
     setNetwork(networkName)
     return networkName
@@ -120,18 +131,20 @@ export default function Web3Provider({ children }) {
     if (!networkName) {
       setMarketplaceContract(null)
       setCollectionContract(null)
-      setNFTContract(null)
+      setNftContract(null)
       return false
     }
 
     const { data } = await axios(`/api/addresses?network=${networkName}`)
-    console.log('data', networkName, data)
     const marketplaceContract = new ethers.Contract(data.marketplaceAddress, Market.abi, signer)
     setMarketplaceContract(marketplaceContract)
     const collectionContract = new ethers.Contract(data.collectionAddress, Collection.abi, signer)
     setCollectionContract(collectionContract)
-    const nftContract = new ethers.Contract(data.nftAddress, NFT.abi, signer)
-    setNFTContract(nftContract)
+
+    if (nftAddress) {
+      const nftContract = new ethers.Contract(nftAddress, MockERC721.abi, signer)
+      setNftContract(nftContract)
+    }
     return true
   }
 
@@ -145,6 +158,7 @@ export default function Web3Provider({ children }) {
         isReady,
         network,
         balance,
+        setNftAddress,
         initializeWeb3,
         hasWeb3
       }}

@@ -24,12 +24,12 @@ const useStyles = makeStyles((theme) => ({
   }
 }))
 
-export default function NFTCardList ({ nfts, setNfts, withCreateNFT }) {
+export default function NFTCardList ({ collectionId, nftContract, nfts, setNfts, withCreateNFT }) {
   const classes = useStyles()
-  const { account, marketplaceContract, nftContract } = useContext(Web3Context)
+  const { account, marketplaceContract } = useContext(Web3Context)
 
   async function updateNFT (index, tokenId) {
-    const updatedNFt = await mapCreatedAndOwnedTokenIdsAsMarketItems(marketplaceContract, nftContract, account)(tokenId)
+    const updatedNFt = await mapCreatedAndOwnedTokenIdsAsMarketItems(marketplaceContract, collectionId, nftContract, account)(tokenId)
     setNfts(prevNfts => {
       const updatedNfts = [...prevNfts]
       updatedNfts[index] = updatedNFt
@@ -38,13 +38,13 @@ export default function NFTCardList ({ nfts, setNfts, withCreateNFT }) {
   }
 
   async function addNFTToList (tokenId) {
-    const nft = await mapCreatedAndOwnedTokenIdsAsMarketItems(marketplaceContract, nftContract, account)(tokenId)
+    const nft = await mapCreatedAndOwnedTokenIdsAsMarketItems(marketplaceContract, collectionId, nftContract, account)(tokenId)
     setNfts(prevNfts => [nft, ...prevNfts])
   }
 
   function NFT ({ nft, index }) {
     if (!nft.owner) {
-      return <NFTCardCreation addNFTToList={addNFTToList}/>
+      return <NFTCardCreation collectionId={collectionId} nftContract={nftContract} addNFTToList={addNFTToList}/>
     }
 
     if (nft.owner === account && nft.marketItemId && !nft.hasMarketApproval) {
@@ -73,7 +73,7 @@ export default function NFTCardList ({ nfts, setNfts, withCreateNFT }) {
     >
       <Grid container className={classes.grid} id="grid">
         {withCreateNFT && <Grid item xs={12} sm={6} md={3} className={classes.gridItem}>
-          <NFTCardCreation addNFTToList={addNFTToList}/>
+          <NFTCardCreation collectionId={collectionId} nftContract={nftContract} addNFTToList={addNFTToList}/>
         </Grid>}
         {nfts.map((nft, i) =>
           <Fade in={true} key={i}>

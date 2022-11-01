@@ -1,10 +1,8 @@
 import axios from 'axios'
 import { ethers } from 'ethers'
 
-export async function getCollectionMetadataByCollectionId(collectionContract, collectionId) {
+export async function getCollectionMetadata(collectionUri) {
   try {
-    const collectionUri = await collectionContract.collectionURI(collectionId)
-    console.log('collectionUri', collectionUri)
     const { data: metadata } = await axios.get(collectionUri)
     return metadata
   } catch (error) {
@@ -12,19 +10,22 @@ export async function getCollectionMetadataByCollectionId(collectionContract, co
   }
 }
 
-export function mapCollections(collectionContract, account) {
+export function mapCollections(collectionContract) {
   return async (collectionId) => {
-    console.log('collectionId', collectionId)
-    const metadata = await getCollectionMetadataByCollectionId(collectionContract, collectionId)
-    return mapCollection(metadata, account)
+    const collectionData = await collectionContract.fetchCollectionByCollectionId(collectionId)
+    return mapCollection(collectionData)
   }
 }
 
-export function mapCollection(metadata, account) {
+export async function mapCollection(collectionData) {
+  const collectionUri = collectionData.uri
+  const metadata = await getCollectionMetadata(collectionUri)
   return {
-    creator: account,
+    name: collectionData.name,
+    symbol: collectionData.symbol,
+    shorturl: collectionData.shorturl,
+    creator: collectionData.creator,
     image: metadata.image,
-    name: metadata.name,
     description: metadata.description,
   }
 }
@@ -34,4 +35,9 @@ export async function fetchMyCollectionIds(collectionContract) {
   // const myCollectionIds = [...myCollections]
   return myCollections
   // return [...new Map(myCollections.map((item) => [item._hex, item])).values()]
+}
+
+export async function fetchCollectionByShorturl(collectionContract, shorturl) {
+  const collectionData = await collectionContract.fetchCollectionByShorturl(shorturl)
+  return collectionData
 }
