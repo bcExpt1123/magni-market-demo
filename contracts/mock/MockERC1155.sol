@@ -14,8 +14,6 @@ contract MockERC1155 is ERC1155 {
     string public name = "";
     string public symbol = "";
 
-    event TokenMinted(uint256 indexed tokenId, string tokenURI);
-
     constructor(
         string memory _name,
         string memory _symbol,
@@ -25,15 +23,11 @@ contract MockERC1155 is ERC1155 {
         symbol = _symbol;
     }
 
-    function myItems()
-        external
-        view
-        returns (uint256[] memory items, uint256[] memory balances)
-    {
+    function myItems() external view returns (uint256[] memory items, uint256[] memory balances) {
         // Returns an array of items that the user owns
         uint256 _counter = 0;
         for (uint256 i = 0; i < _tokenIds.current(); i++) {
-            if (balanceOf(msg.sender, i) > 0) {
+            if (balanceOf(msg.sender, i + 1) > 0) {
                 // if the user owns the item
                 _counter++;
             }
@@ -43,10 +37,10 @@ contract MockERC1155 is ERC1155 {
         balances = new uint256[](_counter);
         _counter = 0;
         for (uint256 i = 0; i < _tokenIds.current(); i++) {
-            if (balanceOf(msg.sender, i) > 0) {
+            if (balanceOf(msg.sender, i + 1) > 0) {
                 // if the user owns the item
-                items[_counter] = i;
-                balances[_counter] = balanceOf(msg.sender, i);
+                items[_counter] = i + 1;
+                balances[_counter] = balanceOf(msg.sender, i + 1);
                 _counter++;
             }
         }
@@ -58,13 +52,17 @@ contract MockERC1155 is ERC1155 {
         _setURI(newuri);
     }
 
-    function mint(address ownerAddress, string memory tokenURI, uint256 value) public {
+    function mint(
+        address ownerAddress,
+        string memory tokenURI,
+        uint256 value
+    ) public returns (uint256) {
         require(ownerAddress != address(0), "ERC1155: mint to the zero address");
-        uint256 newTokenId = _tokenIds.current();
         _tokenIds.increment();
+        uint256 newTokenId = _tokenIds.current();
 
         _mint(ownerAddress, newTokenId, value, "");
-        emit TokenMinted(newTokenId, uri(newTokenId));
+        return newTokenId;
     }
 
     // // function mintBatch(

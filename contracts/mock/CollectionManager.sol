@@ -17,35 +17,37 @@ contract CollectionManager is CollectionEnumerable {
     Counters.Counter public collectionIds;
 
     mapping(uint256 => NftCollection) private idToNftCollection;
-    mapping(uint256 => address) public collectionToOwner;
-    mapping(address => uint256[]) public ownerToCollection;
-    mapping(uint256 => string) public collectionURI;
+    mapping(string => uint256) private shortUrlToCollectionId;
+    mapping(uint256 => address) public collectionToCreator;
+    mapping(address => uint256[]) public creatorToCollection;
+
+    event TokenMinted(uint256 indexed tokenId, string tokenURI);
 
     event CollectionCreated(
         uint256 indexed collectionId,
         uint8 indexed nftType,
-        address nftContract,
+        address indexed nftContract,
         string name,
         string symbol,
         string uri,
-        address owner
+        address creator
     );
 
     event CollectionUpdated(
         uint256 indexed collectionId,
         uint8 indexed nftType,
-        address nftContract,
+        address indexed nftContract,
         string name,
         string symbol,
         string uri,
         uint8 status,
-        address owner
+        address creator
     );
 
     address private thorContractAddress;
 
-    modifier onlyOwnerOf(uint256 collectionId) {
-        require(msg.sender == collectionToOwner[collectionId], "no owner");
+    modifier onlyCreatorOf(uint256 collectionId) {
+        require(msg.sender == collectionToCreator[collectionId], "no creator");
         _;
     }
 
@@ -54,11 +56,12 @@ contract CollectionManager is CollectionEnumerable {
     function createThorCollection(
         string memory name,
         string memory symbol,
+        string memory shorturl,
         string memory uri,
         address _thorContractAddress
     ) external {
         thorContractAddress = _thorContractAddress;
-        createCollection(2, name, symbol, uri);
+        createCollection(2, name, symbol, shorturl, uri);
     }
 
     /**
@@ -67,7 +70,7 @@ contract CollectionManager is CollectionEnumerable {
      * @param nftType - 0: ERC721, 1: ERC1155, 2: ThorNodeNFT
      * @param name - ex: "Zombie Monkeys"
      * @param symbol - ex: "ZmBM"
-     * @param uri - ex: "https://testnets-api.opensea.io/api/v1/assets?collection=zombiemonkeys"
+     * @param uri - ex: "https://ipfs.io/ipfs/QmNyzmjaJ8E8BF4vNWXiJZjEM5ASoFPmrhdoShSYnEdXHQ"
      *
      * returns null
      */
@@ -75,24 +78,28 @@ contract CollectionManager is CollectionEnumerable {
         uint8 nftType,
         string memory name,
         string memory symbol,
+        string memory shorturl,
         string memory uri
     ) public onlyNftType(nftType) {
         require(bytes(name).length > 0, "name should be not empty");
         require(bytes(symbol).length > 0, "symbol should be not empty");
         require(bytes(uri).length > 0, "uri should be not empty");
 
-        uint256 collectionId = collectionIds.current();
-        for (uint256 i = 0; i < collectionId; i++) {
-            require(!compareStrings(idToNftCollection[i].name, name), "The name is already taken");
-        }
-
         collectionIds.increment();
+        uint256 collectionId = collectionIds.current();
+        for (uint256 i = 0; i < collectionId - 1; i++) {
+            require(!compareStrings(idToNftCollection[i + 1].name, name), "The name is already taken");
+            require(!compareStrings(idToNftCollection[i + 1].symbol, symbol), "The symbol is already taken");
+            require(!compareStrings(idToNftCollection[i + 1].shorturl, shorturl), "The shorturl is already taken");
+        }
 
         if (nftType == uint8(NftType.ERC721)) {
             MockERC721 contractAddress = new MockERC721(name, symbol);
             idToNftCollection[collectionId] = NftCollection(
+                collectionId,
                 name,
                 symbol,
+                shorturl,
                 uri,
                 nftType,
                 uint8(CollectionStatus.NORMAL),
@@ -104,8 +111,10 @@ contract CollectionManager is CollectionEnumerable {
         } else if (nftType == uint8(NftType.ERC1155)) {
             MockERC1155 contractAddress = new MockERC1155(name, symbol, uri);
             idToNftCollection[collectionId] = NftCollection(
+                collectionId,
                 name,
                 symbol,
+                shorturl,
                 uri,
                 nftType,
                 uint8(CollectionStatus.NORMAL),
@@ -116,8 +125,10 @@ contract CollectionManager is CollectionEnumerable {
             emit CollectionCreated(collectionId, nftType, address(contractAddress), name, symbol, uri, msg.sender);
         } else if (nftType == uint8(NftType.ThorNodeNFT)) {
             idToNftCollection[collectionId] = NftCollection(
+                collectionId,
                 name,
                 symbol,
+                shorturl,
                 uri,
                 nftType,
                 uint8(CollectionStatus.NORMAL),
@@ -128,9 +139,9 @@ contract CollectionManager is CollectionEnumerable {
             emit CollectionCreated(collectionId, nftType, address(thorContractAddress), name, symbol, uri, msg.sender);
         }
 
-        collectionURI[collectionId] = uri;
-        collectionToOwner[collectionId] = msg.sender;
-        ownerToCollection[msg.sender].push(collectionId);
+        shortUrlToCollectionId[shorturl] = collectionId;
+        collectionToCreator[collectionId] = msg.sender;
+        creatorToCollection[msg.sender].push(collectionId);
     }
 
     /**
@@ -144,32 +155,45 @@ contract CollectionManager is CollectionEnumerable {
     function createNFT(
         uint256 collectionId,
         address ownerAddress,
-        string memory tokenURI,
+        string memory nftURI,
         uint256 amountForErc1155
-    ) external onlyOwnerOf(collectionId) {
-        require(collectionId < collectionIds.current(), "Collection not exist");
+    ) external onlyCreatorOf(collectionId) returns (uint256 tokenId) {
+        require(collectionId > 0 && collectionId <= collectionIds.current(), "Collection not exist");
         NftCollection memory nftCollection = idToNftCollection[collectionId];
         if (nftCollection.nftType == uint8(NftType.ERC721)) {
             MockERC721 mockERC721 = MockERC721(nftCollection.nftContract);
-            mockERC721.mint(ownerAddress, tokenURI);
+            uint256 newTokenId = mockERC721.mint(ownerAddress, nftURI);
+            emit TokenMinted(newTokenId, nftURI);
+            return newTokenId;
         } else if (nftCollection.nftType == uint8(NftType.ERC1155)) {
             MockERC1155 mockERC1155 = MockERC1155(nftCollection.nftContract);
-            mockERC1155.mint(ownerAddress, tokenURI, amountForErc1155);
+            uint256 newTokenId = mockERC1155.mint(ownerAddress, nftURI, amountForErc1155);
+            emit TokenMinted(newTokenId, nftURI);
+            return newTokenId;
         }
     }
 
-    function fetchByCollectionId(uint256 collectionId) public view returns (NftCollection memory) {
-        require(collectionId < collectionIds.current(), "Collection not exist");
+    function fetchCollectionByCollectionId(uint256 collectionId) public view returns (NftCollection memory) {
+        require(collectionId > 0 && collectionId <= collectionIds.current(), "Collection not exist");
         return idToNftCollection[collectionId];
     }
 
-    function fetchMyCollectionIds() public view returns (uint256[] memory) {
-        return fetchCollectionIdsByOwner(msg.sender);
+    function fetchCollectionByShorturl(string memory shorturl) public view returns (NftCollection memory, bool) {
+        uint256 collectionId = shortUrlToCollectionId[shorturl];
+        if (collectionId == 0) {
+            NftCollection memory emptyNftCollection;
+            return (emptyNftCollection, false);
+        }
+        return (idToNftCollection[collectionId], true);
     }
 
-    function fetchCollectionIdsByOwner(address target) public view returns (uint256[] memory) {
+    function fetchMyCollectionIds() public view returns (uint256[] memory) {
+        return fetchCollectionIdsByCreator(msg.sender);
+    }
+
+    function fetchCollectionIdsByCreator(address target) public view returns (uint256[] memory) {
         require(target != address(0), "address to the zero address");
-        return ownerToCollection[target];
+        return creatorToCollection[target];
     }
 
     // functionalities
@@ -186,35 +210,35 @@ contract CollectionManager is CollectionEnumerable {
             idToNftCollection[collectionId].symbol,
             idToNftCollection[collectionId].uri,
             idToNftCollection[collectionId].status,
-            idToNftCollection[collectionId].owner
+            idToNftCollection[collectionId].creator
         );
     }
 
-    function updateName(uint256 collectionId, string memory name) external onlyOwnerOf(collectionId) {
-        require(collectionId < collectionIds.current(), "Collection not exist");
+    function updateName(uint256 collectionId, string memory name) external onlyCreatorOf(collectionId) {
+        require(collectionId > 0 && collectionId <= collectionIds.current(), "Collection not exist");
         require(bytes(name).length > 0, "name should be not empty");
         idToNftCollection[collectionId].name = name;
 
         _emitCollectionUpdated(collectionId);
     }
 
-    function updateSymbol(uint256 collectionId, string memory symbol) external onlyOwnerOf(collectionId) {
-        require(collectionId < collectionIds.current(), "Collection not exist");
+    function updateSymbol(uint256 collectionId, string memory symbol) external onlyCreatorOf(collectionId) {
+        require(collectionId > 0 && collectionId <= collectionIds.current(), "Collection not exist");
         require(bytes(symbol).length > 0, "symbol should be not empty");
         idToNftCollection[collectionId].symbol = symbol;
 
         _emitCollectionUpdated(collectionId);
     }
 
-    function updateTokenUri(uint256 collectionId, string memory tokenuri) external onlyOwnerOf(collectionId) {
-        require(collectionId < collectionIds.current(), "Collection not exist");
-        require(bytes(tokenuri).length > 0, "token uri should be not empty");
-        idToNftCollection[collectionId].uri = tokenuri;
+    function updateCollectionUri(uint256 collectionId, string memory uri) external onlyCreatorOf(collectionId) {
+        require(collectionId > 0 && collectionId <= collectionIds.current(), "Collection not exist");
+        require(bytes(uri).length > 0, "collection uri should be not empty");
+        idToNftCollection[collectionId].uri = uri;
         _emitCollectionUpdated(collectionId);
     }
 
     function updateCollectionStatus(uint256 collectionId, uint8 status) external onlyCollectionStatus(status) {
-        require(collectionId < collectionIds.current(), "Collection not exist");
+        require(collectionId > 0 && collectionId <= collectionIds.current(), "Collection not exist");
         idToNftCollection[collectionId].status = status;
         _emitCollectionUpdated(collectionId);
     }

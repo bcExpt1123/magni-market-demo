@@ -28,14 +28,16 @@ contract CollectionEnumerable {
     }
 
     struct NftCollection {
+        uint256 collectionId;
         string name;
         string symbol;
+        string shorturl;
         string uri;
         uint8 nftType;
         uint8 status;
         bool isExternalCollection;
         address nftContract;
-        address owner;
+        address creator;
     }
 
     function compareStrings(string memory a, string memory b) public pure returns (bool) {
