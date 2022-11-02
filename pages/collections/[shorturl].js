@@ -9,10 +9,10 @@ import NFTCardList from '../../src/components/organisms/NFTCardList'
 import { mapCreatedAndOwnedTokenIdsAsMarketItems, getUniqueOwnedAndCreatedTokenIds } from '../../src/utils/nft'
 import UnsupportedChain from '../../src/components/molecules/UnsupportedChain'
 import ConnectWalletMessage from '../../src/components/molecules/ConnectWalletMessage'
-
+import { getNftContract } from '../../src/utils/nft'
 
 // taken from https://usehooks.com/usePrevious/
-function usePrevious(value) {
+function usePrevious (value) {
     const ref = useRef();
 
     useEffect(() => {
@@ -22,7 +22,7 @@ function usePrevious(value) {
     return ref.current;
 }
 
-function useEffectAllDepsChange(fn, deps) {
+function useEffectAllDepsChange (fn, deps) {
     const prevDeps = usePrevious(deps);
     const changeTarget = useRef();
 
@@ -49,9 +49,10 @@ function useEffectAllDepsChange(fn, deps) {
 const CollectionPage = () => {
     const [collectionId, setCollectionId] = useState(undefined)
     const [nfts, setNfts] = useState([])
-    const { account, marketplaceContract, collectionContract, nftContract, isReady, hasWeb3, network, setNftAddress } = useContext(Web3Context)
+    const { account, marketplaceContract, collectionContract, isReady, hasWeb3, network, providerSigner } = useContext(Web3Context)
     const [isLoading, setIsLoading] = useState(true)
     const [hasWindowEthereum, setHasWindowEthereum] = useState(false)
+    const [nftContract, setNftContract] = useState(null)
 
     const router = useRouter()
     const { shorturl } = router.query
@@ -80,7 +81,7 @@ const CollectionPage = () => {
             loadNftContract()
     }, [account, isReady])
 
-    async function loadNftContract() {
+    async function loadNftContract () {
         console.log('loadNftContract isReady', isReady, hasWeb3)
         if (!isReady || !hasWeb3) return <></>
         console.log('shorturl', shorturl)
@@ -88,13 +89,15 @@ const CollectionPage = () => {
         const [collectionData, hasFound] = await fetchCollectionByShorturl(collectionContract, shorturl)
         if (hasFound) {
             console.log('collectionData', collectionData)
-            console.log('collectionData.collectionId.toNumber()', collectionData.collectionId.toNumber())
-            setCollectionId(collectionData.collectionId.toNumber())
-            setNftAddress(collectionData.nftContract)
+            setCollectionId(collectionData.collectionId)
+
+            const nftContract = await getNftContract(collectionData.nftAddress, providerSigner)
+            setNftContract(nftContract)
+            // setNftAddress(collectionData.nftContract)
         }
     }
 
-    async function loadNFTs() {
+    async function loadNFTs () {
         // console.log('isReady', isReady, hasWeb3)
         // if (!isReady || !hasWeb3) {
         //     setIsLoading(false)

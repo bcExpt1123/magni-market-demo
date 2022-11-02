@@ -25,7 +25,7 @@ const useStyles = makeStyles({
 
 const defaultFileUrl = 'https://miro.medium.com/max/250/1*DSNfSDcOe33E2Aup1Sww2w.jpeg'
 
-export default function NFTCardCreation({ collectionId, nftContract, addNFTToList }) {
+export default function NFTCardCreation ({ collectionId, addNFTToList }) {
   const { account, collectionContract } = useContext(Web3Context)
   const [file, setFile] = useState(null)
   const [fileUrl, setFileUrl] = useState(defaultFileUrl)
@@ -33,17 +33,17 @@ export default function NFTCardCreation({ collectionId, nftContract, addNFTToLis
   const { register, handleSubmit, reset } = useForm()
   const [isLoading, setIsLoading] = useState(false)
 
-  async function createNft(metadataUrl) {
+  async function createNft (metadataUrl) {
     console.log('collectionId', collectionId, account, collectionContract)
     const transaction = await collectionContract.createNFT(collectionId, account, metadataUrl, 0)
     const tx = await transaction.wait()
     const event = tx.events[1]
     console.log('createNFT events', tx.events)
     const tokenId = event.args[0]
-    return tokenId.toNumber()
+    return tokenId
   }
 
-  function createNFTFormDataFile(name, description, file) {
+  function createNFTFormDataFile (name, description, file) {
     const formData = new FormData()
     formData.append('name', name)
     formData.append('description', description)
@@ -51,7 +51,7 @@ export default function NFTCardCreation({ collectionId, nftContract, addNFTToLis
     return formData
   }
 
-  async function uploadFileToIPFS(formData) {
+  async function uploadFileToIPFS (formData) {
     const { data } = await axios.post('/api/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
@@ -59,13 +59,13 @@ export default function NFTCardCreation({ collectionId, nftContract, addNFTToLis
     return data.url
   }
 
-  async function onFileChange(event) {
+  async function onFileChange (event) {
     if (!event.target.files[0]) return
     setFile(event.target.files[0])
     setFileUrl(URL.createObjectURL(event.target.files[0]))
   }
 
-  async function onSubmit({ name, description }) {
+  async function onSubmit ({ name, description }) {
     try {
       if (!file || isLoading) return
       setIsLoading(true)

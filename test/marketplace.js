@@ -245,7 +245,7 @@ describe('Marketplace', function () {
     await mintTokenAndCreateMarketItem(2, price, transactionOptions)
 
     // Act
-    const unsoldMarketItems = await marketplaceContract.fetchAvailableMarketItems()
+    const unsoldMarketItems = await marketplaceContract.fetchMarketItems()
 
     // Assert
     expect(unsoldMarketItems.length).to.equal(2)

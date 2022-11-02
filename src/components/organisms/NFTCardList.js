@@ -24,11 +24,11 @@ const useStyles = makeStyles((theme) => ({
   }
 }))
 
-export default function NFTCardList ({ collectionId, nftContract, nfts, setNfts, withCreateNFT }) {
+export default function NFTCardList ({ collectionId, nfts, setNfts, withCreateNFT }) {
   const classes = useStyles()
   const { account, marketplaceContract } = useContext(Web3Context)
 
-  async function updateNFT (index, tokenId) {
+  async function updateNFT (index, tokenId, nftContract) {
     const updatedNFt = await mapCreatedAndOwnedTokenIdsAsMarketItems(marketplaceContract, collectionId, nftContract, account)(tokenId)
     setNfts(prevNfts => {
       const updatedNfts = [...prevNfts]
@@ -37,22 +37,22 @@ export default function NFTCardList ({ collectionId, nftContract, nfts, setNfts,
     })
   }
 
-  async function addNFTToList (tokenId) {
+  async function addNFTToList (tokenId, nftContract) {
     const nft = await mapCreatedAndOwnedTokenIdsAsMarketItems(marketplaceContract, collectionId, nftContract, account)(tokenId)
     setNfts(prevNfts => [nft, ...prevNfts])
   }
 
   function NFT ({ nft, index }) {
     if (!nft.owner) {
-      return <NFTCardCreation collectionId={collectionId} nftContract={nftContract} addNFTToList={addNFTToList}/>
+      return <NFTCardCreation collectionId={collectionId} addNFTToList={addNFTToList} />
     }
 
     if (nft.owner === account && nft.marketItemId && !nft.hasMarketApproval) {
-      return <NFTCard nft={nft} action="approve" updateNFT={() => updateNFT(index, nft.tokenId)}/>
+      return <NFTCard nft={nft} action="approve" updateNFT={() => updateNFT(index, nft.tokenId)} />
     }
 
     if (nft.owner === account) {
-      return <NFTCard nft={nft} action="sell" updateNFT={() => updateNFT(index, nft.tokenId)}/>
+      return <NFTCard nft={nft} action="sell" updateNFT={() => updateNFT(index, nft.tokenId)} />
     }
 
     if (nft.seller === account && !nft.sold) {
@@ -63,7 +63,7 @@ export default function NFTCardList ({ collectionId, nftContract, nfts, setNfts,
       return <NFTCard nft={nft} action="buy" updateNFT={() => updateNFT(index, nft.tokenId)} />
     }
 
-    return <NFTCard nft={nft} action="none"/>
+    return <NFTCard nft={nft} action="none" />
   }
 
   return (
@@ -73,12 +73,12 @@ export default function NFTCardList ({ collectionId, nftContract, nfts, setNfts,
     >
       <Grid container className={classes.grid} id="grid">
         {withCreateNFT && <Grid item xs={12} sm={6} md={3} className={classes.gridItem}>
-          <NFTCardCreation collectionId={collectionId} nftContract={nftContract} addNFTToList={addNFTToList}/>
+          <NFTCardCreation collectionId={collectionId} addNFTToList={addNFTToList} />
         </Grid>}
         {nfts.map((nft, i) =>
           <Fade in={true} key={i}>
             <Grid item xs={12} sm={6} md={3} className={classes.gridItem} >
-                <NFT nft={nft} index={i} />
+              <NFT nft={nft} index={i} />
             </Grid>
           </Fade>
         )}

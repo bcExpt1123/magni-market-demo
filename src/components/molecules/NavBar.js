@@ -18,10 +18,6 @@ const pages = [
   {
     title: 'MY Collections',
     href: '/my-collections'
-  },
-  {
-    title: 'MY NFTs',
-    href: '/my-nfts'
   }
 ]
 
@@ -42,9 +38,9 @@ const NavBar = () => {
             {logo}
           </Typography>
           <Box sx={{ flexGrow: 1, display: 'flex' }}>
-            {pages.map(({ title, href }) => <NavItem title={title} href={href} key={title}/>)}
+            {pages.map(({ title, href }) => <NavItem title={title} href={href} key={title} />)}
           </Box>
-          {account ? <ConnectedAccountAddress account={account}/> : <ConnectButton />}
+          {account ? <ConnectedAccountAddress account={account} /> : <ConnectButton />}
         </Toolbar>
       </Container>
     </AppBar>

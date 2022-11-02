@@ -25,7 +25,7 @@ const useStyles = makeStyles({
 
 const defaultFileUrl = 'https://miro.medium.com/max/250/1*DSNfSDcOe33E2Aup1Sww2w.jpeg'
 
-export default function CollectionCardCreation({ addCollectionToList }) {
+export default function CollectionCardCreation ({ addCollectionToList }) {
   const [file, setFile] = useState(null)
   const [fileUrl, setFileUrl] = useState(defaultFileUrl)
   const classes = useStyles()
@@ -33,15 +33,16 @@ export default function CollectionCardCreation({ addCollectionToList }) {
   const { collectionContract } = useContext(Web3Context)
   const [isLoading, setIsLoading] = useState(false)
 
-  async function createCollection(name, symbol, shorturl, metadataUrl) {
+  async function createCollection (name, symbol, shorturl, metadataUrl) {
     const transaction = await collectionContract.createCollection(0, name, symbol, shorturl, metadataUrl)
     const tx = await transaction.wait()
+    console.log('createCollection events', tx.events)
     const event = tx.events[0]
     const collectionId = event.args[0]
     return collectionId
   }
 
-  function createCollectionFormDataFile(name, symbol, shorturl, description, file) {
+  function createCollectionFormDataFile (name, symbol, shorturl, description, file) {
     const formData = new FormData()
     formData.append('name', name)
     formData.append('symbol', symbol)
@@ -51,7 +52,7 @@ export default function CollectionCardCreation({ addCollectionToList }) {
     return formData
   }
 
-  async function uploadFileToIPFS(formData) {
+  async function uploadFileToIPFS (formData) {
     const { data } = await axios.post('/api/upload-collection', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
@@ -59,13 +60,13 @@ export default function CollectionCardCreation({ addCollectionToList }) {
     return data.url
   }
 
-  async function onFileChange(event) {
+  async function onFileChange (event) {
     if (!event.target.files[0]) return
     setFile(event.target.files[0])
     setFileUrl(URL.createObjectURL(event.target.files[0]))
   }
 
-  async function onSubmit({ name, symbol, shorturl, description }) {
+  async function onSubmit ({ name, symbol, shorturl, description }) {
     try {
       if (!file || isLoading) return
       setIsLoading(true)

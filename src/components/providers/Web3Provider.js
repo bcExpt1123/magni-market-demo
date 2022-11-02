@@ -13,9 +13,10 @@ const contextDefaultValues = {
   connectWallet: () => { },
   marketplaceContract: null,
   collectionContract: null,
-  nftContract: null,
+  // nftContract: null,
   isReady: false,
-  hasWeb3: false
+  hasWeb3: false,
+  providerSigner: null,
 }
 
 const networkNames = {
@@ -28,36 +29,37 @@ export const Web3Context = createContext(
   contextDefaultValues
 )
 
-export default function Web3Provider({ children }) {
+export default function Web3Provider ({ children }) {
   const [hasWeb3, setHasWeb3] = useState(contextDefaultValues.hasWeb3)
   const [account, setAccount] = useState(contextDefaultValues.account)
   const [network, setNetwork] = useState(contextDefaultValues.network)
   const [balance, setBalance] = useState(contextDefaultValues.balance)
   const [marketplaceContract, setMarketplaceContract] = useState(contextDefaultValues.marketplaceContract)
   const [collectionContract, setCollectionContract] = useState(contextDefaultValues.collectionContract)
-  const [nftContract, setNftContract] = useState(contextDefaultValues.nftContract)
+  // const [nftContract, setNftContract] = useState(contextDefaultValues.nftContract)
   const [isReady, setIsReady] = useState(contextDefaultValues.isReady)
-  const [nftAddress, setNftAddress] = useState('')
+  // const [nftAddress, setNftAddress] = useState('')
+  const [providerSigner, setProviderSigner] = useState(contextDefaultValues.providerSigner)
 
   useEffect(() => {
     initializeWeb3()
   }, [])
 
-  useEffect(async () => {
-    if (nftAddress) {
-      console.log("changed nftAddress")
-      initializeWeb3()
-    }
-  }, [nftAddress])
+  // useEffect(async () => {
+  //   if (nftAddress) {
+  //     console.log("changed nftAddress")
+  //     initializeWeb3()
+  //   }
+  // }, [nftAddress])
 
-  async function initializeWeb3WithoutSigner() {
+  async function initializeWeb3WithoutSigner () {
     console.log('initializeWeb3WithoutSigner')
     const alchemyProvider = new ethers.providers.AlchemyProvider(80001)
     setHasWeb3(false)
     await getAndSetWeb3ContextWithoutSigner(alchemyProvider)
   }
 
-  async function initializeWeb3() {
+  async function initializeWeb3 () {
     console.log('initializeWeb3')
     try {
       if (!window.ethereum) {
@@ -73,7 +75,7 @@ export default function Web3Provider({ children }) {
       const provider = new ethers.providers.Web3Provider(connection, 'any')
       await getAndSetWeb3ContextWithSigner(provider)
 
-      function onAccountsChanged(accounts) {
+      function onAccountsChanged (accounts) {
         // Workaround to accountsChanged metamask mobile bug
         if (onAccountsChangedCooldown) return
         onAccountsChangedCooldown = true
@@ -91,9 +93,10 @@ export default function Web3Provider({ children }) {
     }
   }
 
-  async function getAndSetWeb3ContextWithSigner(provider) {
+  async function getAndSetWeb3ContextWithSigner (provider) {
     setIsReady(false)
     const signer = provider.getSigner()
+    setProviderSigner(signer)
     const signerAddress = await signer.getAddress()
     await getAndSetAccountAndBalance(provider, signerAddress)
     const networkName = await getAndSetNetwork(provider)
@@ -101,21 +104,22 @@ export default function Web3Provider({ children }) {
     setIsReady(success)
   }
 
-  async function getAndSetWeb3ContextWithoutSigner(provider) {
+  async function getAndSetWeb3ContextWithoutSigner (provider) {
     setIsReady(false)
+    setProviderSigner(provider)
     const networkName = await getAndSetNetwork(provider)
     const success = await setupContracts(provider, networkName)
     setIsReady(success)
   }
 
-  async function getAndSetAccountAndBalance(provider, address) {
+  async function getAndSetAccountAndBalance (provider, address) {
     setAccount(address)
     const signerBalance = await provider.getBalance(address)
     const balanceInEther = ethers.utils.formatEther(signerBalance, 'ether')
     setBalance(balanceInEther)
   }
 
-  async function getAndSetNetwork(provider) {
+  async function getAndSetNetwork (provider) {
     let { name: network } = await provider.getNetwork()
     console.log('network', network)
     const { chainId: chainId } = await provider.getNetwork()
@@ -127,11 +131,11 @@ export default function Web3Provider({ children }) {
     return networkName
   }
 
-  async function setupContracts(signer, networkName) {
+  async function setupContracts (signer, networkName) {
     if (!networkName) {
       setMarketplaceContract(null)
       setCollectionContract(null)
-      setNftContract(null)
+      // setNftContract(null)
       return false
     }
 
@@ -141,10 +145,10 @@ export default function Web3Provider({ children }) {
     const collectionContract = new ethers.Contract(data.collectionAddress, Collection.abi, signer)
     setCollectionContract(collectionContract)
 
-    if (nftAddress) {
-      const nftContract = new ethers.Contract(nftAddress, MockERC721.abi, signer)
-      setNftContract(nftContract)
-    }
+    // if (nftAddress) {
+    //   const nftContract = new ethers.Contract(nftAddress, MockERC721.abi, signer)
+    //   setNftContract(nftContract)
+    // }
     return true
   }
 
@@ -154,13 +158,13 @@ export default function Web3Provider({ children }) {
         account,
         marketplaceContract,
         collectionContract,
-        nftContract,
+        // nftContract,
         isReady,
         network,
         balance,
-        setNftAddress,
         initializeWeb3,
-        hasWeb3
+        hasWeb3,
+        providerSigner
       }}
     >
       {children}

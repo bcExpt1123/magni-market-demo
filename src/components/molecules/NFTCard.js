@@ -62,14 +62,15 @@ async function getAndSetListingFee (marketplaceContract, setListingFee) {
 
 export default function NFTCard ({ nft, action, updateNFT }) {
   const { setModalNFT, setIsModalOpen } = useContext(NFTModalContext)
-  const { nftContract, marketplaceContract, hasWeb3 } = useContext(Web3Context)
+  const { marketplaceContract, hasWeb3 } = useContext(Web3Context)
   const [isHovered, setIsHovered] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [listingFee, setListingFee] = useState('')
   const [priceError, setPriceError] = useState(false)
   const [newPrice, setPrice] = useState(0)
   const classes = useStyles()
-  const { name, description, image } = nft
+  const { name, description, image, collectionId, nftAddress } = nft
+  const [nftContract, setNftContract] = useState(null)
 
   useEffect(() => {
     getAndSetListingFee(marketplaceContract, setListingFee)
@@ -94,13 +95,13 @@ export default function NFTCard ({ nft, action, updateNFT }) {
     },
     none: {
       text: '',
-      method: () => {}
+      method: () => { }
     }
   }
 
   async function buyNft (nft) {
     const price = ethers.utils.parseUnits(nft.price.toString(), 'ether')
-    const transaction = await marketplaceContract.createMarketSale(nftContract.address, nft.marketItemId, {
+    const transaction = await marketplaceContract.createMarketSale(nft.marketItemId, 0, {
       value: price
     })
     await transaction.wait()
@@ -108,7 +109,7 @@ export default function NFTCard ({ nft, action, updateNFT }) {
   }
 
   async function cancelNft (nft) {
-    const transaction = await marketplaceContract.cancelMarketItem(nftContract.address, nft.marketItemId)
+    const transaction = await marketplaceContract.cancelMarketItem(nft.marketItemId)
     await transaction.wait()
     updateNFT()
   }
@@ -128,7 +129,7 @@ export default function NFTCard ({ nft, action, updateNFT }) {
     setPriceError(false)
     const listingFee = await marketplaceContract.getListingFee()
     const priceInWei = ethers.utils.parseUnits(newPrice, 'ether')
-    const transaction = await marketplaceContract.createMarketItem(nftContract.address, nft.tokenId, priceInWei, { value: listingFee.toString() })
+    const transaction = await marketplaceContract.createMarketItem(0, nftContract.address, collectionId, tokenId, 0, priceInWei, 0, { value: listingFee.toString() })
     await transaction.wait()
     updateNFT()
     return transaction
@@ -142,6 +143,7 @@ export default function NFTCard ({ nft, action, updateNFT }) {
   async function onClick (nft) {
     try {
       setIsLoading(true)
+      console.log('actions[action]', actions[action], nft)
       await actions[action].method(nft)
     } catch (error) {
       console.log(error)
@@ -156,7 +158,7 @@ export default function NFTCard ({ nft, action, updateNFT }) {
       raised={isHovered}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      >
+    >
       <CardMedia
         className={classes.media}
         alt={name}
@@ -165,7 +167,7 @@ export default function NFTCard ({ nft, action, updateNFT }) {
       />
 
       <CardContent className={classes.cardContent} >
-        <NFTName name={name}/>
+        <NFTName name={name} />
         <NFTDescription description={description} />
         <Divider className={classes.firstDivider} />
         <Box className={classes.addressesAndPrice}>
@@ -174,8 +176,8 @@ export default function NFTCard ({ nft, action, updateNFT }) {
           </div>
           <div className={classes.priceContainer}>
             {action === 'sell'
-              ? <PriceTextField listingFee={listingFee} error={priceError} disabled={isLoading} onChange={e => setPrice(e.target.value)}/>
-              : <NFTPrice nft={nft}/>
+              ? <PriceTextField listingFee={listingFee} error={priceError} disabled={isLoading} onChange={e => setPrice(e.target.value)} />
+              : <NFTPrice nft={nft} />
             }
           </div>
         </Box>
