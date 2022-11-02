@@ -36,7 +36,7 @@ contract CollectionEnumerable {
         uint8 nftType;
         uint8 status;
         bool isExternalCollection;
-        address nftContract;
+        address nftAddress;
         address creator;
     }
 

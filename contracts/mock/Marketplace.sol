@@ -55,7 +55,7 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
         uint256 tokenId;
         uint256 amount;
         uint256 price;
-        address nftContract;
+        address nftAddress;
         address payable creator;
         address payable seller;
         address payable owner;
@@ -70,7 +70,7 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
         uint256 indexed marketItemId,
         uint256 indexed collectionId,
         uint256 tokenId,
-        address nftContract,
+        address nftAddress,
         address seller
     );
 
@@ -80,7 +80,7 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
         uint256 indexed marketItemId,
         uint256 indexed collectionId,
         uint256 tokenId,
-        address nftContract,
+        address nftAddress,
         address seller
     );
 
@@ -98,7 +98,7 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
      */
     function createMarketItem(
         uint8 nftType,
-        address nftContract,
+        address nftAddress,
         uint256 collectionId,
         uint256 tokenId,
         uint8 paymentMethod,
@@ -110,12 +110,12 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
         require(collection.status == uint8(CollectionStatus.NORMAL), "Collection should be NORMAL");
 
         if (nftType == uint8(NftType.ERC721)) {
-            require(IERC721(nftContract).ownerOf(tokenId) == msg.sender, "You are not owner of this token");
+            require(IERC721(nftAddress).ownerOf(tokenId) == msg.sender, "You are not owner of this token");
         } else if (nftType == uint8(NftType.ERC1155)) {
-            require(amountOfErc1155 <= IERC1155(nftContract).balanceOf(msg.sender, tokenId), "balance is not enough");
+            require(amountOfErc1155 <= IERC1155(nftAddress).balanceOf(msg.sender, tokenId), "balance is not enough");
         } else if (nftType == uint8(NftType.ThorNodeNFT)) {
             require(
-                INodeRewardManagementNFT(nftContract).ownerOf(tokenId) == msg.sender,
+                INodeRewardManagementNFT(nftAddress).ownerOf(tokenId) == msg.sender,
                 "You are not owner of this token"
             );
         }
@@ -146,7 +146,7 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
             tokenId,
             amountOfErc1155,
             price,
-            nftContract,
+            nftAddress,
             payable(msg.sender),
             payable(msg.sender),
             payable(address(0)),
@@ -155,32 +155,32 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
         );
 
         if (nftType == uint8(NftType.ERC721)) {
-            IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
+            IERC721(nftAddress).transferFrom(msg.sender, address(this), tokenId);
         } else if (nftType == uint8(NftType.ERC1155)) {
-            IERC1155(nftContract).safeTransferFrom(msg.sender, address(this), tokenId, amountOfErc1155, "");
+            IERC1155(nftAddress).safeTransferFrom(msg.sender, address(this), tokenId, amountOfErc1155, "");
         } else if (nftType == uint8(NftType.ThorNodeNFT)) {
-            INodeRewardManagementNFT(nftContract).transferFrom(msg.sender, address(this), tokenId);
+            INodeRewardManagementNFT(nftAddress).transferFrom(msg.sender, address(this), tokenId);
         }
 
-        emit MarketItemCreated(nftType, marketItemId, collectionId, tokenId, nftContract, msg.sender);
+        emit MarketItemCreated(nftType, marketItemId, collectionId, tokenId, nftAddress, msg.sender);
     }
 
     /**
      * @dev Cancel a market item
      */
     function cancelMarketItem(uint256 marketItemId) public nonReentrant {
-        address nftContract = idToMarketItem[marketItemId].nftContract;
+        address nftAddress = idToMarketItem[marketItemId].nftAddress;
         uint256 tokenId = idToMarketItem[marketItemId].tokenId;
         uint256 collectionId = idToMarketItem[marketItemId].collectionId;
         uint8 nftType = idToMarketItem[marketItemId].nftType;
-        require(nftContract != address(0), "Market item has to exist");
+        require(nftAddress != address(0), "Market item has to exist");
 
         require(idToMarketItem[marketItemId].seller == msg.sender, "You are not the seller");
 
         if (nftType == uint8(NftType.ERC721)) {
-            IERC721(nftContract).transferFrom(address(this), msg.sender, tokenId);
+            IERC721(nftAddress).transferFrom(address(this), msg.sender, tokenId);
         } else if (nftType == uint8(NftType.ERC1155)) {
-            IERC1155(nftContract).safeTransferFrom(
+            IERC1155(nftAddress).safeTransferFrom(
                 address(this),
                 msg.sender,
                 tokenId,
@@ -188,26 +188,27 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
                 ""
             );
         } else if (nftType == uint8(NftType.ThorNodeNFT)) {
-            INodeRewardManagementNFT(nftContract).transferFrom(address(this), msg.sender, tokenId);
+            INodeRewardManagementNFT(nftAddress).transferFrom(address(this), msg.sender, tokenId);
         }
 
         idToMarketItem[marketItemId].owner = payable(msg.sender);
         idToMarketItem[marketItemId].canceled = true;
+        _itemsCanceled.increment();
 
-        emit MarketItemCanceled(nftType, marketItemId, collectionId, tokenId, nftContract, msg.sender);
+        emit MarketItemCanceled(nftType, marketItemId, collectionId, tokenId, nftAddress, msg.sender);
     }
 
     function _splitPaymentWithRoyalties(
-        address nftContract,
+        address nftAddress,
         uint256 price,
         uint8 paymentMethod,
         address payable seller
     ) internal {
         uint256 payoutToSeller = price;
-        bool hasRoyalty = royaltyManagerMainnet.hasRoyalty(nftContract);
+        bool hasRoyalty = royaltyManagerMainnet.hasRoyalty(nftAddress);
         if (hasRoyalty) {
             (address payable[] memory recipients, uint256[] memory amounts) = royaltyManagerMainnet.getRoyalty(
-                nftContract,
+                nftAddress,
                 price
             );
 
@@ -240,9 +241,9 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
     {
         uint256 itemsCount = _marketItemIds.current();
 
-        for (uint256 i = itemsCount - 1; i >= 0; i--) {
-            MarketItem memory item = idToMarketItem[i + 1];
-            if (item.collectionId != collectionId && item.tokenId != tokenId) continue;
+        for (uint256 i = itemsCount; i >= 1; i--) {
+            MarketItem memory item = idToMarketItem[i];
+            if (item.collectionId != collectionId || item.tokenId != tokenId) continue;
             return (item, true);
         }
 
@@ -258,7 +259,7 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
      */
     function createMarketSale(uint256 marketItemId, uint256 saleAmountOfErc1155) public payable nonReentrant {
         uint8 nftType = idToMarketItem[marketItemId].nftType;
-        address nftContract = idToMarketItem[marketItemId].nftContract;
+        address nftAddress = idToMarketItem[marketItemId].nftAddress;
         uint8 paymentMethod = idToMarketItem[marketItemId].paymentMethod;
         uint256 price = idToMarketItem[marketItemId].price;
         uint256 collectionId = idToMarketItem[marketItemId].collectionId;
@@ -272,7 +273,7 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
             price = saleAmountOfErc1155.mul(price);
         }
 
-        require(nftContract != address(0), "Market item has to exist");
+        require(nftAddress != address(0), "Market item has to exist");
         require(sold != true, "This Sale has already finished");
         require(msg.sender != seller, "Seller cannot buy it");
         if (paymentMethod == uint8(PaymentMethod.AVAX)) {
@@ -282,7 +283,7 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
             }
         }
 
-        _splitPaymentWithRoyalties(nftContract, price, paymentMethod, seller);
+        _splitPaymentWithRoyalties(nftAddress, price, paymentMethod, seller);
 
         idToMarketItem[marketItemId].owner = payable(msg.sender);
         idToMarketItem[marketItemId].sold = true;
@@ -301,7 +302,7 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
                     tokenId,
                     listAmount - saleAmountOfErc1155,
                     price,
-                    nftContract,
+                    nftAddress,
                     creator,
                     seller,
                     payable(address(0)),
@@ -310,7 +311,7 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
                 );
                 idToMarketItem[marketItemId].amount = saleAmountOfErc1155;
             }
-            IERC1155(nftContract).safeTransferFrom(address(this), msg.sender, tokenId, saleAmountOfErc1155, "");
+            IERC1155(nftAddress).safeTransferFrom(address(this), msg.sender, tokenId, saleAmountOfErc1155, "");
 
             if (paymentMethod == uint8(PaymentMethod.AVAX)) {
                 payable(owner()).transfer(saleAmountOfErc1155.mul(listingFee));
@@ -318,14 +319,14 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
                 thorToken.transfer(owner(), saleAmountOfErc1155.mul(listingFee));
             }
         } else if (nftType == uint8(NftType.ERC721)) {
-            IERC721(nftContract).transferFrom(address(this), msg.sender, tokenId);
+            IERC721(nftAddress).transferFrom(address(this), msg.sender, tokenId);
             if (paymentMethod == uint8(PaymentMethod.AVAX)) {
                 payable(owner()).transfer(listingFee);
             } else if (paymentMethod == uint8(PaymentMethod.ERC20)) {
                 thorToken.transfer(owner(), listingFee);
             }
         } else if (nftType == uint8(NftType.ThorNodeNFT)) {
-            INodeRewardManagementNFT(nftContract).transferFrom(address(this), msg.sender, tokenId);
+            INodeRewardManagementNFT(nftAddress).transferFrom(address(this), msg.sender, tokenId);
             if (paymentMethod == uint8(PaymentMethod.AVAX)) {
                 payable(owner()).transfer(listingFee);
             } else if (paymentMethod == uint8(PaymentMethod.ERC20)) {
@@ -339,27 +340,30 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
     /**
      * @dev Fetch non sold and non canceled market items
      */
-    function fetchMarketItems() public view returns (MarketItem[] memory) {
+    function fetchMarketItems() public view returns (MarketItem[] memory, bool) {
         uint256 itemCount = _marketItemIds.current();
         uint256 unsoldItemCount = _marketItemIds.current() - _itemsSold.current() - _itemsCanceled.current();
         uint256 currentIndex = 0;
 
         MarketItem[] memory items = new MarketItem[](unsoldItemCount);
-        for (uint256 i = 0; i < itemCount; i++) {
-            if (idToMarketItem[i + 1].owner == address(0)) {
-                uint256 currentId = idToMarketItem[i + 1].marketItemId;
-                MarketItem storage currentItem = idToMarketItem[currentId];
-                items[currentIndex] = currentItem;
-                currentIndex += 1;
+        if (unsoldItemCount > 0) {
+            for (uint256 i = 0; i < itemCount; i++) {
+                if (idToMarketItem[i + 1].owner == address(0)) {
+                    uint256 currentId = idToMarketItem[i + 1].marketItemId;
+                    MarketItem storage currentItem = idToMarketItem[currentId];
+                    items[currentIndex] = currentItem;
+                    currentIndex += 1;
+                }
             }
+            return (items, true);
         }
-        return items;
+        return (items, false);
     }
 
     /**
      * @dev Fetch non list to marketplace
      */
-    function fetchMyNFTs() public view returns (MarketItem[] memory) {
+    function fetchMyNFTs() public view returns (MarketItem[] memory, bool) {
         uint256 totalItemCount = _marketItemIds.current();
         uint256 itemCount = 0;
         uint256 currentIndex = 0;
@@ -371,21 +375,24 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
         }
 
         MarketItem[] memory items = new MarketItem[](itemCount);
-        for (uint256 i = 0; i < totalItemCount; i++) {
-            if (idToMarketItem[i + 1].owner == msg.sender) {
-                uint256 currentId = idToMarketItem[i + 1].marketItemId;
-                MarketItem storage currentItem = idToMarketItem[currentId];
-                items[currentIndex] = currentItem;
-                currentIndex += 1;
+        if (itemCount > 0) {
+            for (uint256 i = 0; i < totalItemCount; i++) {
+                if (idToMarketItem[i + 1].owner == msg.sender) {
+                    uint256 currentId = idToMarketItem[i + 1].marketItemId;
+                    MarketItem storage currentItem = idToMarketItem[currentId];
+                    items[currentIndex] = currentItem;
+                    currentIndex += 1;
+                }
             }
+            return (items, true);
         }
-        return items;
+        return (items, false);
     }
 
     /**
      * @dev Fetch market items created by msg.sender
      */
-    function fetchItemsCreated() public view returns (MarketItem[] memory) {
+    function fetchItemsCreated() public view returns (MarketItem[] memory, bool) {
         uint256 totalItemCount = _marketItemIds.current();
         uint256 itemCount = 0;
         uint256 currentIndex = 0;
@@ -397,15 +404,18 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
         }
 
         MarketItem[] memory items = new MarketItem[](itemCount);
-        for (uint256 i = 0; i < totalItemCount; i++) {
-            if (idToMarketItem[i + 1].seller == msg.sender) {
-                uint256 currentId = idToMarketItem[i + 1].marketItemId;
-                MarketItem storage currentItem = idToMarketItem[currentId];
-                items[currentIndex] = currentItem;
-                currentIndex += 1;
+        if (itemCount > 0) {
+            for (uint256 i = 0; i < totalItemCount; i++) {
+                if (idToMarketItem[i + 1].seller == msg.sender) {
+                    uint256 currentId = idToMarketItem[i + 1].marketItemId;
+                    MarketItem storage currentItem = idToMarketItem[currentId];
+                    items[currentIndex] = currentItem;
+                    currentIndex += 1;
+                }
             }
+            return (items, true);
         }
-        return items;
+        return (items, false);
     }
 
     function onERC1155Received(

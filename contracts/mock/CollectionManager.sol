@@ -26,7 +26,7 @@ contract CollectionManager is CollectionEnumerable {
     event CollectionCreated(
         uint256 indexed collectionId,
         uint8 indexed nftType,
-        address indexed nftContract,
+        address indexed nftAddress,
         string name,
         string symbol,
         string uri,
@@ -36,7 +36,7 @@ contract CollectionManager is CollectionEnumerable {
     event CollectionUpdated(
         uint256 indexed collectionId,
         uint8 indexed nftType,
-        address indexed nftContract,
+        address indexed nftAddress,
         string name,
         string symbol,
         string uri,
@@ -161,12 +161,12 @@ contract CollectionManager is CollectionEnumerable {
         require(collectionId > 0 && collectionId <= collectionIds.current(), "Collection not exist");
         NftCollection memory nftCollection = idToNftCollection[collectionId];
         if (nftCollection.nftType == uint8(NftType.ERC721)) {
-            MockERC721 mockERC721 = MockERC721(nftCollection.nftContract);
+            MockERC721 mockERC721 = MockERC721(nftCollection.nftAddress);
             uint256 newTokenId = mockERC721.mint(ownerAddress, nftURI);
             emit TokenMinted(newTokenId, nftURI);
             return newTokenId;
         } else if (nftCollection.nftType == uint8(NftType.ERC1155)) {
-            MockERC1155 mockERC1155 = MockERC1155(nftCollection.nftContract);
+            MockERC1155 mockERC1155 = MockERC1155(nftCollection.nftAddress);
             uint256 newTokenId = mockERC1155.mint(ownerAddress, nftURI, amountForErc1155);
             emit TokenMinted(newTokenId, nftURI);
             return newTokenId;
@@ -205,7 +205,7 @@ contract CollectionManager is CollectionEnumerable {
         emit CollectionUpdated(
             collectionId,
             idToNftCollection[collectionId].nftType,
-            idToNftCollection[collectionId].nftContract,
+            idToNftCollection[collectionId].nftAddress,
             idToNftCollection[collectionId].name,
             idToNftCollection[collectionId].symbol,
             idToNftCollection[collectionId].uri,
