@@ -55,13 +55,13 @@ const useStyles = makeStyles({
   }
 })
 
-async function getAndSetListingFee(marketplaceContract, setListingFee) {
+async function getAndSetListingFee (marketplaceContract, setListingFee) {
   if (!marketplaceContract) return
   const listingFee = await marketplaceContract.getListingFee()
   setListingFee(ethers.utils.formatUnits(listingFee, 'ether'))
 }
 
-export default function CollectionCard({ collection, updateCollection }) {
+export default function CollectionCard ({ collection, updateCollection }) {
   const { setModalCollection, setIsModalOpen } = useContext(CollectionModalContext)
   const { collectionContract, marketplaceContract, hasWeb3 } = useContext(Web3Context)
   const [isHovered, setIsHovered] = useState(false)
@@ -76,11 +76,11 @@ export default function CollectionCard({ collection, updateCollection }) {
     getAndSetListingFee(marketplaceContract, setListingFee)
   }, [])
 
-  function handleCardImageClick() {
+  function handleCardImageClick () {
     console.log('shorturl', shorturl)
   }
 
-  async function onClick(collection) {
+  async function onClick (collection) {
     try {
       setIsLoading(true)
     } catch (error) {

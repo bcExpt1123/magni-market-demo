@@ -50,7 +50,7 @@ export default function UnsupportedChain () {
       <Button
         variant='outlined'
         color='primary'
-        // onClick={ () => addNetwork(chains.polygonMumbaiTestnet, account) }
+        onClick={() => addNetwork(chains.polygonMumbaiTestnet, account)}
         sx={{
           maxWidth: 600,
           margin: 'auto',
@@ -58,7 +58,7 @@ export default function UnsupportedChain () {
           justifyContent: 'center'
         }}
       >
-        { renderProviderText() }
+        {renderProviderText()}
       </Button>
     </PageMessageBox>
   )

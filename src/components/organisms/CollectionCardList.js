@@ -5,7 +5,6 @@ import Fade from '@mui/material/Fade'
 import { makeStyles } from '@mui/styles'
 import CollectionCard from '../molecules/CollectionCard'
 import CollectionCardCreation from '../molecules/CollectionCardCreation'
-import { ethers } from 'ethers'
 import { Web3Context } from '../providers/Web3Provider'
 import { useContext } from 'react'
 import { mapCollections } from '../../utils/collection'
@@ -24,16 +23,16 @@ const useStyles = makeStyles((theme) => ({
   }
 }))
 
-export default function CollectionCardList({ collections, setCollections, withCreateCollection }) {
+export default function CollectionCardList ({ collections, setCollections, withCreateCollection }) {
   const classes = useStyles()
-  const { account, collectionContract } = useContext(Web3Context)
+  const { collectionContract } = useContext(Web3Context)
 
-  async function addCollectionToList(collectionId) {
+  async function addCollectionToList (collectionId) {
     const collection = await mapCollections(collectionContract)(collectionId)
     setCollections(prevCollections => [collection, ...prevCollections])
   }
 
-  function Collection({ collection, index }) {
+  function Collection ({ collection, index }) {
     if (!collection.creator) {
       return <CollectionCardCreation addCollectionToList={addCollectionToList} />
     }

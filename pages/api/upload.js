@@ -15,7 +15,7 @@ export const config = {
   }
 }
 
-handler.post(async function handlePost({ body, files }, response) {
+handler.post(async function handlePost ({ body, files }, response) {
   try {
     const fileUrl = await uploadFileToIPFS(files.file[0])
     const metadata = {
@@ -33,7 +33,7 @@ handler.post(async function handlePost({ body, files }, response) {
   }
 })
 
-async function uploadFileToIPFS(data) {
+async function uploadFileToIPFS (data) {
   const formData = new FormData()
   formData.append('file', fs.createReadStream(data.path), data.originalFileName)
 
@@ -52,7 +52,7 @@ async function uploadFileToIPFS(data) {
     console.log(error)
   }
 }
-async function uploadJsonToIPFS(json, fileName) {
+async function uploadJsonToIPFS (json, fileName) {
   try {
     const { data: responseData } = await axios.post(`${pinataBaseUrl}/pinning/pinJSONToIPFS`, json, {
       headers: {

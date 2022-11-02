@@ -1,7 +1,6 @@
 import { createContext, useEffect, useState } from 'react'
 import Web3Modal from 'web3modal'
 import { ethers } from 'ethers'
-import MockERC721 from '../../../artifacts/contracts/mock/MockERC721.sol/MockERC721.json'
 import Market from '../../../artifacts/contracts/mock/Marketplace.sol/Marketplace.json'
 import Collection from '../../../artifacts/contracts/mock/CollectionManager.sol/CollectionManager.json'
 import axios from 'axios'
@@ -16,7 +15,7 @@ const contextDefaultValues = {
   // nftContract: null,
   isReady: false,
   hasWeb3: false,
-  providerSigner: null,
+  providerSigner: null
 }
 
 const networkNames = {
@@ -122,8 +121,8 @@ export default function Web3Provider ({ children }) {
   async function getAndSetNetwork (provider) {
     let { name: network } = await provider.getNetwork()
     console.log('network', network)
-    const { chainId: chainId } = await provider.getNetwork()
-    if (chainId == 43113) network = 'fuji'
+    const { chainId } = await provider.getNetwork()
+    if (chainId === 43113) network = 'fuji'
     console.log('network', network)
 
     const networkName = networkNames[network]
