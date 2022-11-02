@@ -6,6 +6,8 @@
   "rules": {
     "react/react-in-jsx-scope": "off",
     "space-before-function-paren": ["error", "always"],
+    "no-unused-vars": ["off"],
+    "no-undef": ["off"],
     "react/jsx-filename-extension": [1, { "extensions": [".js", ".jsx"] }],
     "react/prop-types": "off",
     "react-hooks/exhaustive-deps": "off"
