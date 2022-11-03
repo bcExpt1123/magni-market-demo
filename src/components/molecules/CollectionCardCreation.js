@@ -31,8 +31,8 @@ export default function CollectionCardCreation ({ addCollectionToList }) {
   const classes = useStyles()
   const { register, handleSubmit, reset, control } = useForm({
     defaultValues: {
-      nfttype: 0,
-    },
+      nfttype: 0
+    }
   })
   const { collectionContract } = useContext(Web3Context)
   const [isLoading, setIsLoading] = useState(false)
