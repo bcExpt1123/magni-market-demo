@@ -90,6 +90,9 @@ export default function NFTCardCreation ({ collectionData, addNFTToList }) {
 
   return (
     <Card className={classes.root} component="form" sx={{ maxWidth: 345 }} onSubmit={handleSubmit(onSubmit)}>
+      <label>
+        NFT Create of Collection({collectionData.name})
+      </label>
       <label htmlFor="file-input">
         <CardMedia
           className={classes.media}

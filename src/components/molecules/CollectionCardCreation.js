@@ -90,6 +90,10 @@ export default function CollectionCardCreation ({ addCollectionToList }) {
 
   return (
     <Card className={classes.root} component="form" sx={{ maxWidth: 345 }} onSubmit={handleSubmit(onSubmit)}>
+      <label>
+        Collection Create
+      </label>
+
       <label htmlFor="file-input">
         <CardMedia
           className={classes.media}
