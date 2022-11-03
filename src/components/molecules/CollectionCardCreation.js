@@ -1,8 +1,8 @@
 
 import { useContext, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { makeStyles } from '@mui/styles'
-import { TextField, Card, CardActions, CardContent, CardMedia, Button, CircularProgress } from '@mui/material'
+import { TextField, Card, CardActions, CardContent, CardMedia, Button, CircularProgress, RadioGroup, FormControlLabel, Radio } from '@mui/material'
 import axios from 'axios'
 import { Web3Context } from '../providers/Web3Provider'
 
@@ -29,12 +29,16 @@ export default function CollectionCardCreation ({ addCollectionToList }) {
   const [file, setFile] = useState(null)
   const [fileUrl, setFileUrl] = useState(defaultFileUrl)
   const classes = useStyles()
-  const { register, handleSubmit, reset } = useForm()
+  const { register, handleSubmit, reset, control } = useForm({
+    defaultValues: {
+      nfttype: 0,
+    },
+  })
   const { collectionContract } = useContext(Web3Context)
   const [isLoading, setIsLoading] = useState(false)
 
-  async function createCollection (name, symbol, shorturl, metadataUrl) {
-    const transaction = await collectionContract.createCollection(0, name, symbol, shorturl, metadataUrl)
+  async function createCollection (nfttype, name, symbol, shorturl, metadataUrl) {
+    const transaction = await collectionContract.createCollection(nfttype, name, symbol, shorturl, metadataUrl)
     const tx = await transaction.wait()
     console.log('createCollection events', tx.events)
     const event = tx.events[0]
@@ -66,13 +70,14 @@ export default function CollectionCardCreation ({ addCollectionToList }) {
     setFileUrl(URL.createObjectURL(event.target.files[0]))
   }
 
-  async function onSubmit ({ name, symbol, shorturl, description }) {
+  async function onSubmit ({ nfttype, name, symbol, shorturl, description }) {
+    console.log('nfttype', nfttype, name)
     try {
       if (!file || isLoading) return
       setIsLoading(true)
       const formData = createCollectionFormDataFile(name, symbol, shorturl, description, file)
       const metadataUrl = await uploadFileToIPFS(formData)
-      const collectionId = await createCollection(name, symbol, shorturl, metadataUrl)
+      const collectionId = await createCollection(nfttype, name, symbol, shorturl, metadataUrl)
       addCollectionToList(collectionId)
       setFileUrl(defaultFileUrl)
       reset()
@@ -100,6 +105,20 @@ export default function CollectionCardCreation ({ addCollectionToList }) {
         onChange={onFileChange}
       />
       <CardContent sx={{ paddingBottom: 0 }}>
+        <Controller
+          rules={{ required: true }}
+          control={control}
+          name="nfttype"
+          render={({ field }) => (
+            <RadioGroup {...field}
+              aria-labelledby="demo-radio-buttons-group-label"
+              defaultValue="0"
+            >
+              <FormControlLabel value="0" control={<Radio />} label="ERC721" />
+              <FormControlLabel value="1" control={<Radio />} label="ERC1155" />
+            </RadioGroup>
+          )}
+        />
         <TextField
           id="name-input"
           label="Name"

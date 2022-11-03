@@ -24,7 +24,8 @@ const useStyles = makeStyles((theme) => ({
   }
 }))
 
-export default function NFTCardList ({ collectionId, nfts, setNfts, withCreateNFT }) {
+export default function NFTCardList ({ collectionData, nfts, setNfts, withCreateNFT }) {
+  const collectionId = collectionData.collectionId
   const classes = useStyles()
   const { account, marketplaceContract } = useContext(Web3Context)
 
@@ -44,7 +45,7 @@ export default function NFTCardList ({ collectionId, nfts, setNfts, withCreateNF
 
   function NFT ({ nft, index }) {
     if (!nft.owner) {
-      return <NFTCardCreation collectionId={collectionId} addNFTToList={addNFTToList} />
+      return <NFTCardCreation collectionData={collectionData} addNFTToList={addNFTToList} />
     }
 
     if (nft.owner === account && nft.marketItemId && !nft.hasMarketApproval) {
@@ -73,7 +74,7 @@ export default function NFTCardList ({ collectionId, nfts, setNfts, withCreateNF
     >
       <Grid container className={classes.grid} id="grid">
         {withCreateNFT && <Grid item xs={12} sm={6} md={3} className={classes.gridItem}>
-          <NFTCardCreation collectionId={collectionId} addNFTToList={addNFTToList} />
+          <NFTCardCreation collectionData={collectionData} addNFTToList={addNFTToList} />
         </Grid>}
         {nfts.map((nft, i) =>
           <Fade in={true} key={i}>

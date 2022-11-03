@@ -13,6 +13,7 @@ export async function getCollectionMetadata(collectionUri) {
 export function mapCollections(collectionContract) {
   return async (collectionId) => {
     const collectionData = await collectionContract.fetchCollectionByCollectionId(collectionId)
+    console.log('collectionData', collectionData)
     return mapCollection(collectionData)
   }
 }
@@ -30,8 +31,8 @@ export async function mapCollection(collectionData) {
   }
 }
 
-export async function fetchMyCollectionIds(collectionContract) {
-  const myCollections = await collectionContract.fetchMyCollectionIds()
+export async function fetchMyCollectionIds(collectionContract, account) {
+  const myCollections = await collectionContract.fetchCollectionIdsByCreator(account)
   // const myCollectionIds = [...myCollections]
   return myCollections
   // return [...new Map(myCollections.map((item) => [item._hex, item])).values()]

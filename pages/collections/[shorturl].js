@@ -46,12 +46,13 @@ function useEffectAllDepsChange (fn, deps) {
 }
 
 const CollectionPage = () => {
-  const [collectionId, setCollectionId] = useState(undefined)
+  const [collectionData, setCollectionData] = useState(undefined)
   const [nfts, setNfts] = useState([])
   const { account, marketplaceContract, collectionContract, isReady, hasWeb3, network, providerSigner } = useContext(Web3Context)
   const [isLoading, setIsLoading] = useState(true)
   const [hasWindowEthereum, setHasWindowEthereum] = useState(false)
   const [nftContract, setNftContract] = useState(null)
+  const [nfttype, setNfttype] = useState(0)
 
   const router = useRouter()
   const { shorturl } = router.query
@@ -61,11 +62,11 @@ const CollectionPage = () => {
   }, [])
 
   useEffectAllDepsChange(() => {
-    if (nftContract && collectionId !== undefined) {
-      console.log('running effect', [nftContract?.address, collectionId])
+    if (nftContract && collectionData !== undefined) {
+      console.log('running effect', [nftContract?.address, collectionData])
       loadNFTs()
     }
-  }, [nftContract?.address, collectionId])
+  }, [nftContract?.address, collectionData])
 
   // useEffect(() => {
   //     console.log('nftContract', nftContract)
@@ -89,9 +90,9 @@ const CollectionPage = () => {
     const [collectionData, hasFound] = await fetchCollectionByShorturl(collectionContract, shorturl)
     if (hasFound) {
       console.log('collectionData', collectionData)
-      setCollectionId(collectionData.collectionId)
+      setCollectionData(collectionData)
 
-      const nftContract = await getNftContract(collectionData.nftAddress, providerSigner)
+      const nftContract = await getNftContract(collectionData.nftType, collectionData.nftAddress, providerSigner)
       setNftContract(nftContract)
       // setNftAddress(collectionData.nftContract)
     }
@@ -103,14 +104,16 @@ const CollectionPage = () => {
     //     setIsLoading(false)
     //     return <></>
     // }
+    console.log('dynamic nfttype', nfttype)
     console.log('dynamic nftContract2', nftContract)
-    console.log('dynamic collectionId', collectionId)
+    console.log('dynamic collectionData', collectionData)
     const myUniqueCreatedAndOwnedTokenIds = await getUniqueOwnedAndCreatedTokenIds(nftContract)
     console.log('myUniqueCreatedAndOwnedTokenIds', myUniqueCreatedAndOwnedTokenIds)
 
     const myNfts = await Promise.all(myUniqueCreatedAndOwnedTokenIds.map(
-      mapCreatedAndOwnedTokenIdsAsMarketItems(marketplaceContract, collectionId, nftContract, account)
+      mapCreatedAndOwnedTokenIdsAsMarketItems(marketplaceContract, collectionData.collectionId, nftContract, account)
     ))
+    console.log('myNfts', myNfts)
     setNfts(myNfts)
     setIsLoading(false)
   }
@@ -121,7 +124,7 @@ const CollectionPage = () => {
   if (isLoading) return <LinearProgress />
 
   return (
-    <NFTCardList collectionId={collectionId} nftContract={nftContract} nfts={nfts} setNfts={setNfts} withCreateNFT={true} />
+    <NFTCardList collectionData={collectionData} nftContract={nftContract} nfts={nfts} setNfts={setNfts} withCreateNFT={true} />
   )
 }
 

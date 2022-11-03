@@ -3,13 +3,14 @@ pragma solidity ^0.8.9;
 
 /// @author: magni
 
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155URIStorage.sol";
 
-contract MockERC1155 is ERC1155 {
+import "@openzeppelin/contracts/utils/Counters.sol";
+
+contract MockERC1155 is ERC1155URIStorage {
     using Counters for Counters.Counter;
     Counters.Counter internal _tokenIds;
+    mapping(uint256 => address) private _creators;
 
     string public name = "";
     string public symbol = "";
@@ -23,7 +24,26 @@ contract MockERC1155 is ERC1155 {
         symbol = _symbol;
     }
 
-    function myItems() external view returns (uint256[] memory items, uint256[] memory balances) {
+    function tokenURI(uint256 tokenId) public view returns (string memory) {
+        return uri(tokenId);
+    }
+
+    function mint(
+        address ownerAddress,
+        string memory _tokenURI,
+        uint256 value
+    ) public returns (uint256) {
+        require(ownerAddress != address(0), "ERC1155: mint to the zero address");
+        _tokenIds.increment();
+        uint256 newTokenId = _tokenIds.current();
+
+        _mint(ownerAddress, newTokenId, value, "");
+        _creators[newTokenId] = msg.sender;
+        _setURI(newTokenId, _tokenURI);
+        return newTokenId;
+    }
+
+    function getTokensOwnedByMe() external view returns (uint256[] memory items, uint256[] memory balances) {
         // Returns an array of items that the user owns
         uint256 _counter = 0;
         for (uint256 i = 0; i < _tokenIds.current(); i++) {
@@ -48,21 +68,29 @@ contract MockERC1155 is ERC1155 {
         return (items, balances);
     }
 
-    function setURI(string memory newuri) public {
-        _setURI(newuri);
+    function getTokenCreatorById(uint256 tokenId) public view returns (address) {
+        return _creators[tokenId];
     }
 
-    function mint(
-        address ownerAddress,
-        string memory tokenURI,
-        uint256 value
-    ) public returns (uint256) {
-        require(ownerAddress != address(0), "ERC1155: mint to the zero address");
-        _tokenIds.increment();
-        uint256 newTokenId = _tokenIds.current();
+    function getTokensCreatedByMe() public view returns (uint256[] memory items, uint256[] memory balances) {
+        uint256 _counter = 0;
 
-        _mint(ownerAddress, newTokenId, value, "");
-        return newTokenId;
+        for (uint256 i = 0; i < _tokenIds.current(); i++) {
+            if (_creators[i + 1] != msg.sender) continue;
+            _counter++;
+        }
+
+        items = new uint256[](_counter);
+        balances = new uint256[](_counter);
+        _counter = 0;
+        for (uint256 i = 0; i < _tokenIds.current(); i++) {
+            if (_creators[i + 1] != msg.sender) continue;
+            items[_counter] = i + 1;
+            balances[_counter] = balanceOf(msg.sender, i + 1);
+            _counter += 1;
+        }
+
+        return (items, balances);
     }
 
     // // function mintBatch(

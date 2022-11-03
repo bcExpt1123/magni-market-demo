@@ -9,7 +9,7 @@ import ConnectWalletMessage from '../src/components/molecules/ConnectWalletMessa
 
 export default function CreatorCollection () {
   const [collections, setCollections] = useState([])
-  const { account, marketplaceContract, collectionContract, nftContract, isReady, hasWeb3, network } = useContext(Web3Context)
+  const { account, collectionContract, isReady, hasWeb3, network } = useContext(Web3Context)
   const [isLoading, setIsLoading] = useState(true)
   const [hasWindowEthereum, setHasWindowEthereum] = useState(false)
 
@@ -18,12 +18,15 @@ export default function CreatorCollection () {
   }, [])
 
   useEffect(() => {
-    loadCollections()
+    if (account && isReady) {
+      loadCollections()
+    }
   }, [account, isReady])
 
   async function loadCollections () {
     if (!isReady || !hasWeb3) return <></>
-    const myCollectionIds = await fetchMyCollectionIds(collectionContract)
+    const myCollectionIds = await fetchMyCollectionIds(collectionContract, account)
+    console.log('myCollectionIds', myCollectionIds)
     const mapMyCollections = await Promise.all(myCollectionIds.map(
       mapCollections(collectionContract)
     ))

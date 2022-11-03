@@ -5,6 +5,7 @@ import { makeStyles } from '@mui/styles'
 import { TextField, Card, CardActions, CardContent, CardMedia, Button, CircularProgress } from '@mui/material'
 import axios from 'axios'
 import { Web3Context } from '../providers/Web3Provider'
+import { getNftContract } from '../../utils/nft'
 
 const useStyles = makeStyles({
   root: {
@@ -25,19 +26,20 @@ const useStyles = makeStyles({
 
 const defaultFileUrl = 'https://miro.medium.com/max/250/1*DSNfSDcOe33E2Aup1Sww2w.jpeg'
 
-export default function NFTCardCreation ({ collectionId, addNFTToList }) {
-  const { account, collectionContract } = useContext(Web3Context)
+export default function NFTCardCreation ({ collectionData, addNFTToList }) {
+  const collectionId = collectionData.collectionId
+  const { account, collectionContract, providerSigner } = useContext(Web3Context)
   const [file, setFile] = useState(null)
   const [fileUrl, setFileUrl] = useState(defaultFileUrl)
   const classes = useStyles()
   const { register, handleSubmit, reset } = useForm()
   const [isLoading, setIsLoading] = useState(false)
 
-  async function createNft (metadataUrl) {
+  async function createNft (metadataUrl, amountOfErc1155) {
     console.log('collectionId', collectionId, account, collectionContract)
-    const transaction = await collectionContract.createNFT(collectionId, account, metadataUrl, 0)
+    const transaction = await collectionContract.createNFT(collectionId, account, metadataUrl, amountOfErc1155)
     const tx = await transaction.wait()
-    const event = tx.events[1]
+    const event = tx.events.find(event => event.args)
     console.log('createNFT events', tx.events)
     const tokenId = event.args[0]
     return tokenId
@@ -65,7 +67,7 @@ export default function NFTCardCreation ({ collectionId, addNFTToList }) {
     setFileUrl(URL.createObjectURL(event.target.files[0]))
   }
 
-  async function onSubmit ({ name, description }) {
+  async function onSubmit ({ name, description, amountOfErc1155 }) {
     try {
       if (!file || isLoading) return
       setIsLoading(true)
@@ -73,9 +75,10 @@ export default function NFTCardCreation ({ collectionId, addNFTToList }) {
       const formData = createNFTFormDataFile(name, description, file)
       const metadataUrl = await uploadFileToIPFS(formData)
       console.log('NFT metadataUrl', metadataUrl)
-      const tokenId = await createNft(metadataUrl)
+      const tokenId = await createNft(metadataUrl, amountOfErc1155)
       console.log('tokenId', tokenId)
-      addNFTToList(tokenId)
+      const nftContract = await getNftContract(collectionData.nftType, collectionData.nftAddress, providerSigner)
+      addNFTToList(tokenId, nftContract)
       setFileUrl(defaultFileUrl)
       reset()
     } catch (error) {
@@ -125,6 +128,19 @@ export default function NFTCardCreation ({ collectionId, addNFTToList }) {
           margin="dense"
           disabled={isLoading}
           {...register('description')}
+        />
+        <TextField
+          id="amountOfErc1155-input"
+          label="amountOfErc1155"
+          name="amountOfErc1155"
+          defaultValue={0}
+          size="small"
+          multiline
+          rows={2}
+          fullWidth
+          margin="dense"
+          disabled={isLoading}
+          {...register('amountOfErc1155')}
         />
       </CardContent>
       <CardActions className={classes.cardActions}>

@@ -10,7 +10,8 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./CollectionEnumerable.sol";
-import "./CollectionManager.sol";
+// import "./CollectionManager.sol";
+import "../interfaces/ICollectionManager.sol";
 import "../interfaces/IRoyaltyManager.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../thor/interfaces/INodeRewardMangementNFT.sol";
@@ -23,7 +24,7 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
     Counters.Counter private _itemsSold;
     Counters.Counter private _itemsCanceled;
 
-    CollectionManager private collectionManager;
+    ICollectionManager private collectionManager;
 
     // Challenge: make this price dynamic according to the current currency price
     uint256 private listingFee = 0.025 ether;
@@ -39,7 +40,7 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
     ) {
         thorToken = ERC20(thorV2Address);
         royaltyManagerMainnet = IRoyaltyManager(royaltyManagerAddress);
-        collectionManager = CollectionManager(collectionAddress);
+        collectionManager = ICollectionManager(collectionAddress);
     }
 
     // function updateThorV2Address(address _thorV2Address) public {
@@ -106,8 +107,8 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
         uint256 amountOfErc1155
     ) public payable nonReentrant onlyNftType(nftType) {
         require(price > 0, "Price must be at least 1 wei");
-        NftCollection memory collection = collectionManager.fetchCollectionByCollectionId(collectionId);
-        require(collection.status == uint8(CollectionStatus.NORMAL), "Collection should be NORMAL");
+        // NftCollection memory collection = collectionManager.fetchCollectionByCollectionId(collectionId);
+        // require(collection.status == uint8(CollectionStatus.NORMAL), "Collection should be NORMAL");
 
         if (nftType == uint8(NftType.ERC721)) {
             require(IERC721(nftAddress).ownerOf(tokenId) == msg.sender, "You are not owner of this token");
@@ -169,6 +170,7 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
      * @dev Cancel a market item
      */
     function cancelMarketItem(uint256 marketItemId) public nonReentrant {
+        require(marketItemId > 0 && marketItemId <= _marketItemIds.current(), "marketItem not exist");
         address nftAddress = idToMarketItem[marketItemId].nftAddress;
         uint256 tokenId = idToMarketItem[marketItemId].tokenId;
         uint256 collectionId = idToMarketItem[marketItemId].collectionId;
@@ -258,6 +260,7 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
      * marketplace to the msg.sender. It also sends the listingFee to the marketplace owner.
      */
     function createMarketSale(uint256 marketItemId, uint256 saleAmountOfErc1155) public payable nonReentrant {
+        require(marketItemId > 0 && marketItemId <= _marketItemIds.current(), "marketItem not exist");
         uint8 nftType = idToMarketItem[marketItemId].nftType;
         address nftAddress = idToMarketItem[marketItemId].nftAddress;
         uint8 paymentMethod = idToMarketItem[marketItemId].paymentMethod;

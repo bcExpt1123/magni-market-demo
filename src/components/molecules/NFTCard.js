@@ -69,7 +69,7 @@ export default function NFTCard ({ nft, action, updateNFT }) {
   const [priceError, setPriceError] = useState(false)
   const [newPrice, setPrice] = useState(0)
   const classes = useStyles()
-  const { name, description, image, collectionId, nftAddress } = nft
+  const { name, description, image, collectionId } = nft
   const [nftContract, setNftContract] = useState(null)
 
   useEffect(() => {
@@ -109,6 +109,7 @@ export default function NFTCard ({ nft, action, updateNFT }) {
   }
 
   async function cancelNft (nft) {
+    console.log('cancelNft nft', nft)
     const transaction = await marketplaceContract.cancelMarketItem(nft.marketItemId)
     await transaction.wait()
     updateNFT()
