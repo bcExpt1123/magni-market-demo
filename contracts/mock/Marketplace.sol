@@ -10,7 +10,6 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./CollectionEnumerable.sol";
-// import "./CollectionManager.sol";
 import "../interfaces/ICollectionManager.sol";
 import "../interfaces/IRoyaltyManager.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -175,7 +174,6 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
         uint256 tokenId = idToMarketItem[marketItemId].tokenId;
         uint256 collectionId = idToMarketItem[marketItemId].collectionId;
         uint8 nftType = idToMarketItem[marketItemId].nftType;
-        require(nftAddress != address(0), "Market item has to exist");
 
         require(idToMarketItem[marketItemId].seller == msg.sender, "You are not the seller");
 
@@ -276,7 +274,6 @@ contract Marketplace is CollectionEnumerable, ReentrancyGuard, Ownable {
             price = saleAmountOfErc1155.mul(price);
         }
 
-        require(nftAddress != address(0), "Market item has to exist");
         require(sold != true, "This Sale has already finished");
         require(msg.sender != seller, "Seller cannot buy it");
         if (paymentMethod == uint8(PaymentMethod.AVAX)) {
